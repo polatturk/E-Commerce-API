@@ -45,7 +45,6 @@ public class PaymentService(IUnitOfWork _unitOfWork) : IPaymentService
             return Response<PaymentResponseDto>.Fail($"Yetersiz ödeme. Gereken: {order.TotalAmount}", 400);
         }
 
-        //Yanlisikla tekrar odeme alinmamasi icin
         if (order.Status != OrderStatus.Pending)
         {
             return Response<PaymentResponseDto>.Fail("Bu siparişin ödeme süreci zaten tamamlanmış veya iptal edilmiş.", 400);
@@ -53,7 +52,14 @@ public class PaymentService(IUnitOfWork _unitOfWork) : IPaymentService
 
         var entity = PaymentMapper.ToEntity(dto);
         entity.PaymentDate = DateTime.Now;
-        entity.Status = PaymentStatus.Success;
+        entity.Status = PaymentStatus.Success; 
+
+        entity.TransactionId = "TRX-" + Guid.NewGuid().ToString().ToUpper().Substring(0, 10);
+
+        if (!string.IsNullOrEmpty(dto.CardNumber) && dto.CardNumber.Length >= 4)
+        {
+            entity.CardLastFour = dto.CardNumber.Substring(dto.CardNumber.Length - 4);
+        }
 
         order.Status = OrderStatus.Processing;
 
@@ -65,7 +71,11 @@ public class PaymentService(IUnitOfWork _unitOfWork) : IPaymentService
         await _unitOfWork.SaveChangesAsync();
 
         var responseDto = PaymentMapper.ToResponseDto(entity);
-        return Response<PaymentResponseDto>.Success(responseDto,201,"Ödemeniz başarıyla alındı. Siparişiniz hazırlanıyor!");
+        return Response<PaymentResponseDto>.Success(
+            responseDto,
+            201,
+            "Ödemeniz başarıyla alındı. Siparişiniz hazırlanıyor!"
+        );
     }
 
     private async Task ClearCartAsync(Guid userId)
