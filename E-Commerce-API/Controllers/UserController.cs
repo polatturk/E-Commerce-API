@@ -1,5 +1,6 @@
 ﻿using Core.DTOs;
 using Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace E_Commerce_API.Controllers
@@ -23,6 +24,7 @@ namespace E_Commerce_API.Controllers
         }
 
         [HttpPost("Register")]
+        [AllowAnonymous]
         public async Task<IActionResult> Register(UserRegisterDto dto)
         {
             var response = await _userService.RegisterAsync(dto);
@@ -30,6 +32,7 @@ namespace E_Commerce_API.Controllers
         }
 
         [HttpPost("Login")]
+        [AllowAnonymous] 
         public async Task<IActionResult> Login(UserLoginDto dto)
         {
             var response = await _userService.LoginAsync(dto);

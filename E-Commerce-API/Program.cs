@@ -27,7 +27,7 @@ namespace E_Commerce_API
 
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "E_Commerce_API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "E-Commerce API", Version = "v1" });
 
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -54,7 +54,6 @@ namespace E_Commerce_API
             builder.Services.AddDbContext<ApiContext>(options =>
               options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // 4. JWT Kimlik Doðrulama Servis Kaydý
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["Key"];
 
@@ -74,11 +73,10 @@ namespace E_Commerce_API
                       ValidIssuer = jwtSettings["Issuer"],
                       ValidAudience = jwtSettings["Audience"],
                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                      ClockSkew = TimeSpan.Zero
+                      ClockSkew = TimeSpan.FromMinutes(10)
                   };
               });
 
-            // Service Records
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -102,18 +100,19 @@ namespace E_Commerce_API
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "E-Commerce API V1");
+                c.RoutePrefix = string.Empty;
+            });
 
             app.UseHttpsRedirection();
 
             app.UseCors("AllowAll");
 
             app.UseAuthentication();
+            app.UseDeveloperExceptionPage();
             app.UseAuthorization();
 
             app.MapControllers();

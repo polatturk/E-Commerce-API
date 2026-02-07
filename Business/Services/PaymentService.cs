@@ -6,10 +6,16 @@ using Core.DTOs;
 using Core.Mappings;
 using DataAccess.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
-    
+using Microsoft.Extensions.Configuration; 
+using Iyzipay; 
+using Iyzipay.Model; 
+using Iyzipay.Request;
+using Payment = Core.Entities.Payment;
+
+
 namespace Business.Services;
 
-public class PaymentService(IUnitOfWork _unitOfWork) : IPaymentService
+public class PaymentService(IUnitOfWork _unitOfWork, IConfiguration _configuration) : IPaymentService
 {
     public async Task<Response<List<PaymentResponseDto>>> GetAllAsync()
     {
@@ -48,7 +54,7 @@ public class PaymentService(IUnitOfWork _unitOfWork) : IPaymentService
         if (order.Status != OrderStatus.Pending)
         {
             return Response<PaymentResponseDto>.Fail("Bu siparişin ödeme süreci zaten tamamlanmış veya iptal edilmiş.", 400);
-        }
+        }   
 
         var entity = PaymentMapper.ToEntity(dto);
         entity.PaymentDate = DateTime.Now;
@@ -87,5 +93,75 @@ public class PaymentService(IUnitOfWork _unitOfWork) : IPaymentService
         {
             _unitOfWork.GetRepository<CartItem>().DeleteRange(cart.Items);
         }
+    }
+
+    private Options GetIyzicoOptions()
+    {
+        return new Options
+        {
+            ApiKey = _configuration["IyzicoSettings:ApiKey"],
+            SecretKey = _configuration["IyzicoSettings:SecretKey"],
+            BaseUrl = _configuration["IyzicoSettings:BaseUrl"]
+        };
+    }
+
+    public async Task<Response<string>> InitializePaymentFormAsync(PaymentCreateDto dto, Guid userId)
+    {
+        var order = await _unitOfWork.GetRepository<Order>().GetSingleAsync(x => x.Id == dto.OrderId && x.UserId == userId);
+        if (order == null) return Response<string>.Fail("Sipariş bulunamadı.", 404);
+
+        var options = GetIyzicoOptions();
+        string price = order.TotalAmount.ToString("F2").Replace(",", ".");
+
+        var request = new CreateCheckoutFormInitializeRequest
+        {
+            Locale = Locale.TR.ToString(),
+            ConversationId = order.Id.ToString(),
+            Price = price,
+            PaidPrice = price,
+            Currency = Currency.TRY.ToString(),
+            BasketId = order.Id.ToString(),
+            PaymentGroup = PaymentGroup.PRODUCT.ToString(),
+            CallbackUrl = "https://localhost:7123/api/Payment/Callback"
+        };
+
+        request.Buyer = new Buyer { Id = userId.ToString(), Name = "Müşteri", Surname = "Soyadı", Email = "test@email.com", IdentityNumber = "11111111111", RegistrationAddress = "Adres", City = "Istanbul", Country = "Turkey" };
+        var address = new Iyzipay.Model.Address {ContactName = "Müşteri Adı", City = "Istanbul", Country = "Turkey", Description = "Adres detayı"};
+        request.ShippingAddress = address; request.BillingAddress = address;
+        request.BasketItems = new List<BasketItem> { new BasketItem { Id = "B1", Name = "Sipariş", Category1 = "Genel", ItemType = BasketItemType.PHYSICAL.ToString(), Price = price } };
+
+        var checkoutFormInitialize = await CheckoutFormInitialize.Create(request, options);
+
+        if (checkoutFormInitialize.Status == Iyzipay.Model.Status.SUCCESS.ToString())
+        {
+            return Response<string>.Success(checkoutFormInitialize.CheckoutFormContent, 200);
+        }
+
+        return Response<string>.Fail(checkoutFormInitialize.ErrorMessage, 400);
+    }
+
+    public async Task<Response<bool>> CompletePaymentAsync(string token)
+    {
+        var options = GetIyzicoOptions();
+        var request = new RetrieveCheckoutFormRequest { Token = token };
+        var checkoutForm = await CheckoutForm.Retrieve(request, options);
+
+        if (checkoutForm.PaymentStatus == "SUCCESS")
+        {
+            var orderId = Guid.Parse(checkoutForm.BasketId);
+            var order = await _unitOfWork.GetRepository<Order>().GetByIdAsync(orderId);
+
+            if (order != null)
+            {
+                order.Status = OrderStatus.Processing;
+                _unitOfWork.GetRepository<Order>().Update(order);
+                var payment = new Payment { Amount = order.TotalAmount, PaymentDate = DateTime.Now, Status = PaymentStatus.Success, OrderId = orderId, TransactionId = checkoutForm.PaymentId, CardLastFour = checkoutForm.LastFourDigits };
+                await _unitOfWork.GetRepository<Payment>().AddAsync(payment);
+                await ClearCartAsync(order.UserId);
+                await _unitOfWork.SaveChangesAsync();
+                return Response<bool>.Success(true, 200);
+            }
+        }
+        return Response<bool>.Fail("Ödeme başarısız.", 400);
     }
 }

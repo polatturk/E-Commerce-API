@@ -16,5 +16,9 @@ namespace Core.Interfaces
         Task<Response<PaymentResponseDto>> GetByIdAsync(Guid id);
 
         Task<Response<PaymentResponseDto>> CreateAsync(PaymentCreateDto dto, Guid userId);
+
+        Task<Response<string>> InitializePaymentFormAsync(PaymentCreateDto dto, Guid userId);
+
+        Task<Response<bool>> CompletePaymentAsync(string token);
     }
 }
