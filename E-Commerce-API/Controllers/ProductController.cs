@@ -1,5 +1,6 @@
 ﻿using Core.DTOs;
 using Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace E_Commerce_API.Controllers
@@ -23,6 +24,7 @@ namespace E_Commerce_API.Controllers
         }
 
         [HttpPost("Create")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(ProductCreateDto dto)
         {
             var response = await _productService.CreateAsync(dto);
@@ -30,6 +32,7 @@ namespace E_Commerce_API.Controllers
         }
 
         [HttpPut("Update")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(ProductUpdateDto dto)
         {
             var response = await _productService.UpdateAsync(dto);
@@ -37,6 +40,7 @@ namespace E_Commerce_API.Controllers
         }
 
         [HttpDelete("Delete/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(Guid id)
         {
             var response = await _productService.RemoveAsync(id);

@@ -9,6 +9,7 @@ namespace E_Commerce_API.Controllers
     [ApiController]
     public class UserController(IUserService _userService) : ControllerBase
     {
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetAll()
         {
@@ -16,6 +17,7 @@ namespace E_Commerce_API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("GetById/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -39,6 +41,7 @@ namespace E_Commerce_API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [Authorize]
         [HttpPut("Update")]
         public async Task<IActionResult> Update(UserUpdateDto dto)
         {
@@ -46,6 +49,7 @@ namespace E_Commerce_API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [Authorize]
         [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {

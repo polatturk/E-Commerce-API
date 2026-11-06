@@ -20,6 +20,7 @@ namespace E_Commerce_API.Controllers
         }
 
         [HttpGet("GetById/{id}")]
+        [Authorize(Roles = "Admin")] 
         public async Task<IActionResult> GetById(Guid id)
         {
             var response = await _paymentService.GetByIdAsync(id);
@@ -52,8 +53,8 @@ namespace E_Commerce_API.Controllers
         }
 
         [HttpPost("Callback")]
-        [AllowAnonymous] // iyzico sunucusu bizimle konuşacağı için bu endpoint herkese açık olmalı
-        [Consumes("application/x-www-form-urlencoded")] // iyzico veriyi 'form' olarak gönderir
+        [AllowAnonymous] 
+        [Consumes("application/x-www-form-urlencoded")] 
         public async Task<IActionResult> Callback([FromForm] IFormCollection collection)
         {
             // iyzico'dan dönen token'ı alıyoruz
@@ -65,7 +66,7 @@ namespace E_Commerce_API.Controllers
             // Ödeme bittiğinde kullanıcıyı web sitendeki "Başarı" veya "Hata" sayfasına yönlendiriyoruz
             if (response.IsSuccess)
             {
-                return Redirect("http://localhost:4200/checkout/success"); // Frontend adresin
+                return Redirect("http://localhost:4200/checkout/success");
             }
 
             return Redirect("http://localhost:4200/checkout/fail");

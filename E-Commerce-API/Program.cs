@@ -104,7 +104,6 @@ namespace E_Commerce_API
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "E-Commerce API V1");
-                c.RoutePrefix = string.Empty;
             });
 
             app.UseHttpsRedirection();
