@@ -18,8 +18,7 @@ namespace Core.Interfaces
         Task<Response<UserResponseDto>> RegisterAsync(UserRegisterDto dto);
         Task<Response<TokenResponseDto>> LoginAsync(UserLoginDto dto);
 
-        Task<Response<bool>> UpdateAsync(UserUpdateDto dto);
-
+        Task<Response<bool>> UpdateAsync(Guid userId, UserUpdateDto dto);
         Task<Response<bool>> RemoveAsync(Guid id);
     }
 }

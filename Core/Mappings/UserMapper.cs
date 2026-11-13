@@ -6,21 +6,15 @@ namespace Core.Mappings
 {
 
     [Mapper(RequiredMappingStrategy = RequiredMappingStrategy.None)]
-    public static partial class UserMapper 
+    public static partial class UserMapper
     {
         public static partial User ToEntity(UserRegisterDto dto);
-        public static partial User ToEntity(UserLoginDto dto);
 
         public static partial void UpdateEntityFromDto(UserUpdateDto dto, User entity);
 
-        [MapProperty(nameof(User.FirstName), nameof(UserResponseDto.FullName))] 
-        public static partial UserResponseDto ToResponseDto(User user);
+        public static UserResponseDto ToResponseDto(User user)=> new(user.Id,$"{user.FirstName} {user.LastName}".Trim(),user.Email,user.Role,user.Gender);
 
-        public static partial List<UserResponseDto> ToResponseDtoList(List<User> users);
-
-        private static string MapFullName(User user)
-        {
-            return $"{user.FirstName} {user.LastName}";
-        }
+        public static List<UserResponseDto> ToResponseDtoList(List<User> users)
+            => users.Select(ToResponseDto).ToList();
     }
 }

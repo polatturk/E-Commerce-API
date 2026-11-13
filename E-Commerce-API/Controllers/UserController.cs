@@ -2,6 +2,7 @@
 using Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace E_Commerce_API.Controllers
 {
@@ -25,6 +26,15 @@ namespace E_Commerce_API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var response = await _userService.GetByIdAsync(userId);
+            return StatusCode(response.StatusCode, response);
+        }
+
         [HttpPost("Register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register(UserRegisterDto dto)
@@ -45,7 +55,8 @@ namespace E_Commerce_API.Controllers
         [HttpPut("Update")]
         public async Task<IActionResult> Update(UserUpdateDto dto)
         {
-            var response = await _userService.UpdateAsync(dto);
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var response = await _userService.UpdateAsync(userId, dto);
             return StatusCode(response.StatusCode, response);
         }
 

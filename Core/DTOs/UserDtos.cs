@@ -14,5 +14,5 @@ namespace Core.DTOs
     public record UserResponseDto(Guid Id, string FullName, string Email, UserRole Role, Gender Gender);
     public record TokenResponseDto(string AccessToken, DateTime AccessTokenExpiration);
 
-    public record UserUpdateDto(Guid Id, string FirstName, string LastName, string Email, Gender Gender);
+    public record UserUpdateDto(string FirstName, string LastName, Gender Gender);
 }

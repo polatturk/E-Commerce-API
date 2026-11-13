@@ -15,6 +15,9 @@ public class UserService(IUnitOfWork _unitOfWork, ITokenService _tokenService) :
     {
         var users = await _unitOfWork.GetRepository<User>().GetAllAsync();
 
+        if (users == null)
+            return Response<List<UserResponseDto>>.Fail("Kullanıcılar bulunamadı", 404);
+
         var dtos = UserMapper.ToResponseDtoList(users.ToList());
 
         return Response<List<UserResponseDto>>.Success(dtos, 200);
@@ -34,12 +37,11 @@ public class UserService(IUnitOfWork _unitOfWork, ITokenService _tokenService) :
 
     public async Task<Response<UserResponseDto>> RegisterAsync(UserRegisterDto dto)
     {
-        var isEmailTaken = await _unitOfWork.GetRepository<User>().AnyAsync(x => x.Email == dto.Email);
+        var email = dto.Email.Trim().ToLowerInvariant();
 
+        var isEmailTaken = await _unitOfWork.GetRepository<User>().AnyAsync(x => x.Email == email);
         if (isEmailTaken)
-        {
-            return Response<UserResponseDto>.Fail("Bu email adresi zaten kullanımda.", 400);
-        }
+            return Response<UserResponseDto>.Fail("Bu email adresi zaten kullanımda.", 409);
 
         try
         {
@@ -84,19 +86,20 @@ public class UserService(IUnitOfWork _unitOfWork, ITokenService _tokenService) :
         return Response<TokenResponseDto>.Success(tokenResponse, 200);
     }
 
-    public async Task<Response<bool>> UpdateAsync(UserUpdateDto dto)
+    public async Task<Response<bool>> UpdateAsync(Guid userId, UserUpdateDto dto)
     {
-        var existingUser = await _unitOfWork.GetRepository<User>().GetByIdAsync(dto.Id);
+        var repo = _unitOfWork.GetRepository<User>();
 
+        var existingUser = await repo.GetByIdAsync(userId);
         if (existingUser == null)
             return Response<bool>.Fail("Kullanıcı bulunamadı", 404);
 
         UserMapper.UpdateEntityFromDto(dto, existingUser);
 
-        _unitOfWork.GetRepository<User>().Update(existingUser);
+        repo.Update(existingUser);
         await _unitOfWork.SaveChangesAsync();
 
-        return Response<bool>.Success(true, 204);
+        return Response<bool>.Success(true, 200);
     }
 
     public async Task<Response<bool>> RemoveAsync(Guid id)
