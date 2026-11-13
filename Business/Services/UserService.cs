@@ -104,14 +104,16 @@ public class UserService(IUnitOfWork _unitOfWork, ITokenService _tokenService) :
 
     public async Task<Response<bool>> RemoveAsync(Guid id)
     {
-        var user = await _unitOfWork.GetRepository<User>().GetByIdAsync(id);
+        var repo = _unitOfWork.GetRepository<User>();
+
+        var user = await repo.GetByIdAsync(id);
 
         if (user == null)
             return Response<bool>.Fail("Kullanıcı bulunamadı", 404);
 
-        _unitOfWork.GetRepository<User>().Delete(user);
+        repo.Delete(user);
         await _unitOfWork.SaveChangesAsync();
 
-        return Response<bool>.Success(true, 204);
+        return Response<bool>.Success(true, 200);
     }
 }

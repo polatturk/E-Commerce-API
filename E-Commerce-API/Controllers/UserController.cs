@@ -60,7 +60,20 @@ namespace E_Commerce_API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        // Müşteri: sadece kendi hesabını siler (ID token'dan gelir)
         [Authorize]
+        [HttpDelete("Delete")]
+        public async Task<IActionResult> DeleteMyAccount()
+        {
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+                return Unauthorized();
+
+            var response = await _userService.RemoveAsync(userId);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        // Admin: herhangi bir kullanıcıyı siler
+        [Authorize(Roles = "Admin")]
         [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
