@@ -39,14 +39,21 @@ public class CartService(IUnitOfWork _unitOfWork) : ICartService
     public async Task<Response<bool>> RemoveAsync(Guid id, Guid userId)
     {
         var cart = await _unitOfWork.GetRepository<Cart>()
-            .GetSingleAsync(x => x.Id == id && x.UserId == userId);
+            .GetSingleAsync(
+                expression: x => x.Id == id && x.UserId == userId,
+                include: q => q.Include(c => c.Items));
 
         if (cart == null)
             return Response<bool>.Fail("Sepet bulunamadı veya yetkiniz yok.", 404);
 
-        _unitOfWork.GetRepository<Cart>().Delete(cart);
-        await _unitOfWork.SaveChangesAsync();
+        var itemRepo = _unitOfWork.GetRepository<CartItem>();
+        foreach (var item in cart.Items.ToList())
+            itemRepo.Delete(item);
 
-        return Response<bool>.Success(true, 204);
+        cart.TotalAmount = 0;
+        _unitOfWork.GetRepository<Cart>().Update(cart);
+            
+        await _unitOfWork.SaveChangesAsync();
+        return Response<bool>.Success(true, 200);
     }
 }
