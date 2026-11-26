@@ -20,5 +20,7 @@ namespace Core.Interfaces
 
         Task<Response<bool>> UpdateAsync(Guid userId, UserUpdateDto dto);
         Task<Response<bool>> RemoveAsync(Guid id);
+        Task<Response<TokenResponseDto>> GoogleLoginAsync(string idToken);
+
     }
 }

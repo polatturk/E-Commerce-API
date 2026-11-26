@@ -51,6 +51,14 @@ namespace E_Commerce_API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [AllowAnonymous]
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin(GoogleLoginDto dto)
+        {
+            var response = await _userService.GoogleLoginAsync(dto.IdToken);
+            return StatusCode(response.StatusCode, response);
+        }
+
         [Authorize]
         [HttpPut("Update")]
         public async Task<IActionResult> Update(UserUpdateDto dto)

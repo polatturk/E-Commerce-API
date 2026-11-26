@@ -35,7 +35,7 @@ namespace DataAccess
                 .HasOne(o => o.ShippingAddress)
                 .WithMany()
                 .HasForeignKey(o => o.ShippingAddressId)
-                .OnDelete(DeleteBehavior.Restrict); 
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.BillingAddress)
@@ -50,10 +50,22 @@ namespace DataAccess
 
             modelBuilder.Entity<Product>().Property(p => p.Name).HasMaxLength(200).IsRequired();
             modelBuilder.Entity<Product>().Property(p => p.Description).HasMaxLength(1000);
+
             modelBuilder.Entity<User>().Property(p => p.FirstName).HasMaxLength(50).IsRequired();
             modelBuilder.Entity<User>().Property(p => p.LastName).HasMaxLength(50).IsRequired();
+            modelBuilder.Entity<User>().Property(u => u.Email).HasMaxLength(256).IsRequired();
+            modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
+            modelBuilder.Entity<User>().Property(u => u.GoogleId).HasMaxLength(100);
+            modelBuilder.Entity<User>().HasIndex(u => u.GoogleId).IsUnique();
+
             modelBuilder.Entity<Category>().Property(c => c.Name).HasMaxLength(100).IsRequired();
             modelBuilder.Entity<Category>().Property(c => c.Description).HasMaxLength(500);
+
+            modelBuilder.Entity<Product>().Property(p => p.Price).HasPrecision(18, 2);
+            modelBuilder.Entity<Cart>().Property(c => c.TotalAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<OrderItem>().Property(i => i.UnitPrice).HasPrecision(18, 2);
+            modelBuilder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
         }
     }
 }
